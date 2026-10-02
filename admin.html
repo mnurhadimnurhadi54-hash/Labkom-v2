@@ -654,7 +654,7 @@
                                 <td>${item.lokasi || 'Maintenance Lab'}</td>
                                 <td><span class="badge-locked">LOCKED DEVICE</span></td>
                                 <td style="text-align: center;">
-                                    <button class="btn btn-success btn-sm" onclick="deleteBooking('${key}')">Unlock & Buka</button>
+                                    <button class="btn btn-success btn-sm" onclick="deleteBooking('${key}', this)">Unlock & Buka</button>
                                 </td>
                             </tr>
                         `;
@@ -671,7 +671,7 @@
                                 <td>${item.tanggal || '-'}</td>
                                 <td>${item.jam || item.keperluan || '-'}</td>
                                 <td>${kelas}</td>
-                                <td><button class="btn btn-danger btn-sm" onclick="deleteBooking('${key}')">Hapus</button></td>
+                                <td><button class="btn btn-danger btn-sm" onclick="deleteBooking('${key}', this)">Hapus</button></td>
                             </tr>
                         `;
                     }
@@ -699,7 +699,7 @@
                     list.innerHTML += `
                         <li style="padding:8px 0; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                             <span><strong>${name}</strong>: ${data[name]} Unit</span>
-                            <button class="btn btn-danger btn-sm" onclick="deleteInventory('${name}')">Hapus</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteInventory('${name}', this)">Hapus</button>
                         </li>
                     `;
                 });
@@ -776,7 +776,7 @@
                         <div class="session-action">
                             <input type="text" id="input-sesi-${session.id}" value="${statusText}" placeholder="Isi KBM / Keterangan...">
                             <button class="btn btn-primary btn-sm" onclick="saveSessionStatus('${category}', '${day}', ${session.id})">Simpan</button>
-                            ${isOccupied ? `<button class="btn btn-danger btn-sm" onclick="clearSessionStatus('${category}', '${day}', ${session.id})">Reset</button>` : ''}
+                            ${isOccupied ? `<button class="btn btn-danger btn-sm" onclick="clearSessionStatus('${category}', '${day}',${session.id})">Reset</button>` : ''}
                         </div>
                     `;
                     container.appendChild(card);
@@ -799,22 +799,59 @@
             });
         }
 
-        function deleteBooking(key) { 
-            if (confirm("Hapus / Buka Kunci data ini?")) {
-                db.ref("data_labkom/" + key).remove().then(() => loadData());
-            } 
+        async function deleteBooking(key, btnElement) { 
+            if (!confirm("Hapus / Buka Kunci data ini?")) return;
+
+            try {
+                if (btnElement) {
+                    btnElement.disabled = true;
+                    btnElement.innerText = "Menghapus...";
+                }
+
+                await db.ref("data_labkom/" + key).remove();
+
+                if (btnElement) {
+                    const row = btnElement.closest("tr");
+                    if (row) row.remove();
+                } else {
+                    loadData();
+                }
+            } catch (error) {
+                alert("Gagal menghapus data: " + error.message);
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.innerText = "Hapus";
+                }
+            }
         }
 
-        function deleteAllBookings() { 
-            if (confirm("YAKIN HAPUS SEMUA DATA BOOKING?")) {
-                db.ref("data_labkom").remove().then(() => loadData());
-            } 
+        async function deleteAllBookings() { 
+            if (!confirm("YAKIN HAPUS SEMUA DATA BOOKING?")) return;
+
+            try {
+                await db.ref("data_labkom").remove();
+                document.getElementById("booking-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada booking masuk.</td></tr>`;
+                document.getElementById("damage-tbody").innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada perangkat dikunci.</td></tr>`;
+                alert("Semua data booking berhasil dibersihkan!");
+            } catch (error) {
+                alert("Gagal menghapus semua data: " + error.message);
+            }
         }
 
-        function deleteInventory(name) { 
-            if (confirm(`Hapus ${name}?`)) {
-                db.ref("stok_alat/" + name).remove();
-                db.ref("inventory/" + name).remove().then(() => loadData());
+        async function deleteInventory(name, btnElement) { 
+            if (!confirm(`Hapus ${name}?`)) return;
+
+            try {
+                await db.ref("stok_alat/" + name).remove();
+                await db.ref("inventory/" + name).remove();
+                if (btnElement) {
+                    const li = btnElement.closest("li");
+                    if (li) li.remove();
+                } else {
+                    loadData();
+                }
+            } catch (error) {
+                alert("Gagal menghapus alat: " + error.message);
             }
         }
 
