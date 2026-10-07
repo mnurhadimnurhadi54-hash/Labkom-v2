@@ -22,8 +22,22 @@
         }
         p.subtitle {
             color: #666;
+            margin-bottom: 12px;
+        }
+        
+        /* Style Badge Pekan */
+        .pekan-badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #bae6fd;
             margin-bottom: 30px;
         }
+
         .container {
             display: flex;
             justify-content: center;
@@ -63,11 +77,20 @@
             color: #dc3545; /* Warna beda khusus Admin */
         }
     </style>
+
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
     <h1>Menu Utama Labkom</h1>
     <p class="subtitle">Pilih layanan yang ingin Anda akses:</p>
+
+    <!-- Elemen Pekan Aktif -->
+    <div id="pekan-display" class="pekan-badge">
+        📌 Memuat status pekan...
+    </div>
 
     <div class="container">
         <!-- Booking Gadget KBM -->
@@ -100,6 +123,21 @@
             <p>Pengelolaan data dan sistem</p>
         </a>
     </div>
+
+    <!-- Script Ambil Status Pekan dari Firebase -->
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://labkom-e0a9e-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Ambil data pekan secara realtime dari Firebase
+        db.ref("system_config/current_pekan").on("value", snapshot => {
+            const pekan = snapshot.val() || "Pekan 1";
+            document.getElementById("pekan-display").innerText = `📌 Saat ini: ${pekan}`;
+        });
+    </script>
 
 </body>
 </html>
